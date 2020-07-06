@@ -2,20 +2,14 @@
 This app show github followers list and follower information
 
 ## Tech Stack
-code based UI, No Library
+- code based UI
+- cocoa pods :   SwiftyJSON, SwiftSoup
 
-## Screenshot
-A. Empty state view
-- iPhone SE
-<p float="left">
-  <img src="./img/Bug_iphoneSE.png" width="250" /> &nbsp;
-  <img src="./img/Mod_iphoneSE.png" width="250" />
-</p>
+## Features
 
-- iPhone 11 pro
-<p float="left">
-  <img src="./img/Mod_iphone11pro.png" width="340" /> 
-</p>
+1. Show follower list and follower information
+2. Filter follower list with keyword
+3. Add follower in favorite list
+4. Show contribution calendar in UserInfoVC
 
 
-## Update Log
