@@ -77,15 +77,16 @@ extension GFContributionsVC {
             (sectionIndex: Int, layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection? in
 
 
-            let verticalItem = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(0.5)))
+            let verticalItem = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9), heightDimension: .fractionalHeight(0.9 / 7.0)))
             
-            verticalItem.contentInsets = NSDirectionalEdgeInsets(top: 5.0, leading: 5.0, bottom: 5.0, trailing: 5.0)
+            verticalItem.contentInsets = NSDirectionalEdgeInsets(top: 2.0, leading: 2.0, bottom: 2.0, trailing: 2.0)
             let verticalGroup = NSCollectionLayoutGroup.vertical(layoutSize:
-                NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .fractionalHeight(1.0)), subitem: verticalItem, count: 7)
-            //1.2 * 0.3 =
+                NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9 / 7.0), heightDimension: .fractionalHeight(0.9)),
+                                                                                   subitem: verticalItem, count: 7)
+            //  heightDimension = (verticalgroup width * 0.4) * 2
             let containerGroup = NSCollectionLayoutGroup.horizontal(
-                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-                                                   heightDimension: .fractionalHeight(0.25)),subitems: [verticalGroup])
+                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.4),
+                                                   heightDimension: .fractionalHeight(1.05)),subitems: [verticalGroup])
             
             let section = NSCollectionLayoutSection(group: containerGroup)
             section.orthogonalScrollingBehavior = .continuousGroupLeadingBoundary

@@ -96,7 +96,7 @@ class UserInfoVC: GFDataLoadingVC {
     
     func layoutUI() {
         let padding: CGFloat    = 20
-        let tableHeight:CGFloat = 120
+        let tableHeight:CGFloat = 155
         let itemHeight: CGFloat = 140
         
         itemViews = [headerView, itemViewContribution, itemViewOne, itemViewTwo, dateLabel]
@@ -113,9 +113,9 @@ class UserInfoVC: GFDataLoadingVC {
         
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.topAnchor),
-            headerView.heightAnchor.constraint(equalToConstant: 210),
+            headerView.heightAnchor.constraint(equalToConstant: 205),
                
-            itemViewContribution.topAnchor.constraint(equalTo: headerView.bottomAnchor,constant: padding),
+            itemViewContribution.topAnchor.constraint(equalTo: headerView.bottomAnchor,constant: 10),
             itemViewContribution.heightAnchor.constraint(equalToConstant: tableHeight),
             
             // width="722" height="112"
