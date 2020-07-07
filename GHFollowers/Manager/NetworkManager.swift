@@ -15,6 +15,13 @@ class NetworkManager {
     private let baseURL = "https://api.github.com/users/"
 
     let cache           = NSCache<NSString, UIImage>()
+    // current document
+    var document: Document = Document.init("")
+
+    private var contributions: [Contribution] = []
+    
+    var months: [String] = []
+
     
     private init() {}
     
@@ -137,126 +144,100 @@ class NetworkManager {
         task.resume()
     }
     
-  // MARK: - get github contribution date
-        func getContributionDate(for username: String, completed: @escaping (Result<[Contribution], GFError>) -> Void) {
-           
-          let endpoint = baseURL.replacingOccurrences(of: "api.", with: "") + "\(username)/contributions"
-       
-            // background thread
-            guard let url = URL(string: endpoint) else {
-                
-                completed(.failure(.invalidUsername))
-                return
-            }
-            
-            let task = URLSession.shared.dataTask(with: url) { data, response, error in
-                
-                if let _ = error {
-                    completed(.failure(.unableToComplete))
-                }
-                
-                guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                    completed(.failure(.unableToComplete))
-                    return
-                }
-                
-                guard let data = data else {
-                    completed(.failure(.invalidData))
-                    return
-                }
-                
-           
-              let htmlValue = String(decoding: data, as: UTF8.self)
-              guard let elements:Elements = try? SwiftSoup.parse(htmlValue).select("rect") else {
-                  
-                  completed(.failure(.invalidData))
-                  return
-                  
-              }
-              var date = ""
-              var color = ""
-              var contribution = [Contribution]()
-
-              // runs 371
-              for element:Element in elements.array() {
-                  if let contributionDate = try? element.attr("data-date") {
-                     date = contributionDate
-                   }
-                  if let hexColor = try? element.attr("fill") {
-                     color = hexColor
-                  }
-
-
-                   let data = Contribution(title: "",contributionDate: date,contributionColor: color)
-                   contribution.append(data)
-              }
-                completed(.success(contribution))
-              
-            }
-            
-            task.resume()
-        }
-      
     
     // MARK: - get github contribution date
-      func getMonth(for username: String, completed: @escaping (Result<[String], GFError>) -> Void) {
+      func getContributionDate(for username: String, completed: @escaping ([Contribution]) -> Void) {
          
+
         let endpoint = baseURL.replacingOccurrences(of: "api.", with: "") + "\(username)/contributions"
      
           // background thread
           guard let url = URL(string: endpoint) else {
-              
-              completed(.failure(.invalidUsername))
+            
+              completed([])
               return
           }
-          
-          let task = URLSession.shared.dataTask(with: url) { data, response, error in
-              
-              if let _ = error {
-                  completed(.failure(.unableToComplete))
-              }
-              
-              guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                  completed(.failure(.unableToComplete))
-                  return
-              }
-              
-              guard let data = data else {
-                  completed(.failure(.invalidData))
-                  return
-              }
-              
-
-             let htmlValue = String(decoding: data, as: UTF8.self)
-                     
-            do {
-                    var month:[String] = []
-                    
-                    let elements: Elements = try SwiftSoup.parse(htmlValue).select("text")
-                    for element in elements {
-                        
-                        if let htmlTag = try? element.outerHtml(),
-                            htmlTag.contains("month") {
-                            let text = try element.text()
-                            month.append(text)
-                        }
-                    }
-                    completed(.success(month))
-                    
+       
+          let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
                 
-            } catch {
-                completed(.failure(.invalidData))
-            }
-          }
-          task.resume()
+                guard let self = self,
+                    error == nil,
+                    let response = response as? HTTPURLResponse,response.statusCode == 200,
+                    let data = data else {
+                        completed([])
+                        return
+                }
+                
+            let htmlValue = String(decoding: data, as: UTF8.self)
+            
+            // parse css query
+            
+            // divided title
+            self.parse(for: "text",  htmlValue: htmlValue)
+            self.parse(for: "rect", htmlValue: htmlValue)
+            //self.parse(for: "text",  htmlValue: htmlValue)
+            
+            completed(self.contributions)
+                
+        }
+            
+            task.resume()
+
       }
     
+     //Parse CSS selector
+    fileprivate func filterAttributes(_ element: Element, for attr1: String, for attr2: String) -> (String, String) {
+        
+        var date = ""
+        var color = ""
+        
+        if let attributeData = try? element.attr(attr1) {
+            date = attributeData
+        }
+        if let attribute2Data = try? element.attr(attr2) {
+            color = attribute2Data
+        }
+        
+        return (date, color)
+    }
     
-   
-      
-    
-    
-    
+    func parse(for tag: String, htmlValue: String) {
+        
+      guard let elements: Elements = try? SwiftSoup.parse(htmlValue).select(tag) else { return }
+
+        if !contributions.isEmpty {
+            contributions.removeAll()
+        }
+        
+        if !months.isEmpty {
+            months.removeAll()
+        }
+      for element in elements {
+       
+        if tag == "text" {
+              
+            guard try! element.attr("class").contains("month") else {
+                return
+            }
+            let _ = try? element.outerHtml()
+            let text = try? element.text()
+         
+             months.append(text!)
+         }
+        
+        if tag == "rect" {
+            
+            let date = filterAttributes(element,for: "data-date", for: "").0
+            let color = filterAttributes(element,for: "", for: "fill" ).1
+            
+            let data = Contribution(month: "", contributionDate: date, contributionColor: color)
+            contributions.append(data)
+            
+        }
+        
+ 
+       }
+    }
 }
 
 

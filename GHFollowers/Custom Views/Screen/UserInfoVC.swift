@@ -18,19 +18,15 @@ class UserInfoVC: GFDataLoadingVC {
     let contentView = UIView()
     
     let headerView  = UIView()
-    
-    let itemViewCalendar = UIView()
-    let itemViewProfile = UIView()
-    let itemViewFollower = UIView()
+    let itemViewContribution = UIView()
+    let itemViewOne = UIView()
+    let itemViewTwo = UIView()
     let dateLabel   = GFBodyLabel(textAlignment: .center)
     var itemViews: [UIView] = []
     
     var username: String!
     weak var delegate: UserInfoVCDelegate!
-    var contributionData: [Contribution] = []
-    var months: [String] = []
-    var users: User!
-   
+    
     init(username: String, delegate: UserInfoVCDelegate) {
         super.init(nibName: nil, bundle: nil)
         self.username = username
@@ -46,7 +42,7 @@ class UserInfoVC: GFDataLoadingVC {
         configureVC()
         configureScrollView()
         layoutUI()
-        runTask()
+        getUserInfo()
     
     }
     
@@ -68,80 +64,42 @@ class UserInfoVC: GFDataLoadingVC {
         
         NSLayoutConstraint.activate([
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-            contentView.heightAnchor.constraint(equalToConstant: 800)
+            contentView.heightAnchor.constraint(equalToConstant: 600)
         ])
     }
     
-    func getUserInfo(completion: @escaping (User) -> Void) {
+    func getUserInfo() {
         NetworkManager.shared.getUserInfo(for: username) { [weak self] result in
             guard let self = self else { return }
             
             switch result {
-                //After(deadline: .now() + .milliseconds(300))
             case .success(let user):
-                completion(user)
-             
+                DispatchQueue.main.async { self.configureUIElements(with: user) }
+        
             case .failure(let error):
                 self.presentGFAlertOnMainThread(title: "Something went wrong!", message: error.rawValue, buttonTitle: "OK")
-                completion(User())
             }
         }
     }
     
-    func getContributionData(completion: @escaping (Bool) -> Void) {
-        NetworkManager.shared.getContributionDate(for: username) { [weak self] result in
-            guard let self = self else { return }
-            
-            switch result {
-            case .success(let data):
-                self.contributionData = data
-            
-            case .failure(let error):
-                self.presentGFAlertOnMainThread(title: "failed to fetch!", message: error.rawValue, buttonTitle: "OK")
-               
-            }
-            
-            completion(!self.contributionData.isEmpty)
-        }
-    }
     
-    func getTitleMonth(for user: User) {
-        NetworkManager.shared.getMonth(for: username) { [weak self] result in
-            guard let self = self else { return }
-            
-            switch result {
-            case .success(let data):
-                self.months = data
-                
-                DispatchQueue.main.async {
-                    self.configureUIElements(with: user)
-                }
-                
-            case .failure(let error):
-                self.presentGFAlertOnMainThread(title: "failed to fetch!", message: error.rawValue, buttonTitle: "OK")
-                
-            }
-            
-        
-        }
-    }
-  
     func configureUIElements(with user: User) {
-        // github contribution
-        self.add(childVC: GFContributionsVC(contributions: contributionData, months: months), to: itemViewCalendar )
-        self.add(childVC: GFRepoItemVC(user: user, delegate: self), to: self.itemViewProfile)
-        self.add(childVC: GFFollowerItemVC(user: user, delegate: self), to: self.itemViewFollower)
+        
+        // we'll add vc (child window)
+        self.add(childVC: GFContributionsVC(username: user.login), to: self.itemViewContribution)
+        self.add(childVC: GFRepoItemVC(user: user, delegate: self), to: self.itemViewOne)
+        self.add(childVC: GFFollowerItemVC(user: user, delegate: self), to: self.itemViewTwo)
         self.add(childVC: GFUserInfoHeaderVC(user: user), to: self.headerView)
         self.dateLabel.text = "GitHub since \(user.createdAt.convertToMonthYearFormat())"
-    
+        
     }
     
     func layoutUI() {
-        let padding: CGFloat    = 25
-        let calendarHeight: CGFloat = 235
+        let padding: CGFloat    = 20
+        let tableHeight:CGFloat = 120
         let itemHeight: CGFloat = 140
         
-        itemViews = [headerView, itemViewCalendar, itemViewProfile, itemViewFollower, dateLabel]
+        itemViews = [headerView, itemViewContribution, itemViewOne, itemViewTwo, dateLabel]
         
         for itemView in itemViews {
             contentView.addSubview(itemView)
@@ -157,16 +115,17 @@ class UserInfoVC: GFDataLoadingVC {
             headerView.topAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.topAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 210),
                
-            itemViewCalendar.topAnchor.constraint(equalTo: headerView.bottomAnchor,constant: padding),
-            itemViewCalendar.heightAnchor.constraint(equalToConstant: calendarHeight),
-             
-            itemViewProfile.topAnchor.constraint(equalTo: itemViewCalendar.bottomAnchor,constant: padding),
-            itemViewProfile.heightAnchor.constraint(equalToConstant: itemHeight),
+            itemViewContribution.topAnchor.constraint(equalTo: headerView.bottomAnchor,constant: padding),
+            itemViewContribution.heightAnchor.constraint(equalToConstant: tableHeight),
             
-            itemViewFollower.topAnchor.constraint(equalTo: itemViewProfile.bottomAnchor,constant: padding),
-            itemViewFollower.heightAnchor.constraint(equalToConstant: itemHeight),
-               
-            dateLabel.topAnchor.constraint(equalTo: itemViewFollower.bottomAnchor, constant: padding),
+            // width="722" height="112"
+            itemViewOne.topAnchor.constraint(equalTo: itemViewContribution.bottomAnchor,constant: padding),
+            itemViewOne.heightAnchor.constraint(equalToConstant: itemHeight),
+             
+            itemViewTwo.topAnchor.constraint(equalTo: itemViewOne.bottomAnchor,constant: padding),
+            itemViewTwo.heightAnchor.constraint(equalToConstant: itemHeight),
+             
+            dateLabel.topAnchor.constraint(equalTo: itemViewTwo.bottomAnchor, constant: padding),
             dateLabel.heightAnchor.constraint(equalToConstant: 50)
         ])
     }
@@ -181,26 +140,10 @@ class UserInfoVC: GFDataLoadingVC {
        dismiss(animated: true)
     }
 
-    func runTask() {
-      
-        DispatchQueue.background(background: {
-            self.getUserInfo { users in
-                self.users = users
-            }
-       
-        }, completion:{
-             
-            self.getContributionData { _ in
-                
-                if self.users != nil {
-                    self.getTitleMonth(for: self.users)
-                }
-            }
-                         
-        })
-
-    }
 }
+
+
+
 
 extension UserInfoVC: GFRepoItemVCDelegate {
     

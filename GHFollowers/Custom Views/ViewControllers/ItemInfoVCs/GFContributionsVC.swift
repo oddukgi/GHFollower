@@ -7,27 +7,35 @@
 //
 
 import UIKit
+import SwiftSoup
 
 class GFContributionsVC: UIViewController {
     
+    
+    private let baseURL = "https://github.com/users/"
     static let headerElementKind = "header-element-kind"
+    typealias Item = (text: String, html: String)
 
     /// - Tag: OrthogonalBehavior
 
+    var username      = ""
     var contributions = [Contribution]()
     var contrubution2DArray = [[Contribution]]()
     var months        = [String]()
     var monthTitle    = ""
-    
+    // current document
+    var document: Document = Document.init("")
+    // item founds
+    var items: [String] = []
     var dataSource: UICollectionViewDiffableDataSource<Int, Contribution>! = nil
     var collectionView: UICollectionView! = nil
 
     
     
-    init( contributions: [Contribution], months: [String]) {
+    init(username: String) {
         super.init(nibName: nil, bundle: nil)
-        self.contributions = contributions
-        self.months        = months
+        self.username      = username
+        
     }
     
     required init?(coder: NSCoder) {
@@ -37,36 +45,9 @@ class GFContributionsVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-       // convert2DArray()
-      //  insertTitle()
-        trimmingTitle()
         configureHierarchy()
-        configureDataSource()
-    }
-    
-   
-    
-    func convert2DArray() {
-        
-        let totCol = contributions.count / 7
-        var i = 0
-        var col = 0
-
-
-        for row in 0..<contributions.count {
-            if row % 7 == 0 && col < totCol {
-                contrubution2DArray.append( [] )
-                i = row
-                for i in i..<(i + 7) {
-                    
-            
-                    contrubution2DArray[col].append(contributions[i])
-                }
-                
-                col += 1
-            }
-            
-        }
+        getContributionCalendar()
+      
     }
     
     func trimmingTitle() {
@@ -74,92 +55,46 @@ class GFContributionsVC: UIViewController {
         monthTitle = months.joined(separator: "\t\t\t\t")
     }
     
-    func insertTitle() {
-        
-        var index = 1
-        var date = ""
-        for col in 0..<contrubution2DArray.count {
-            
-            for row in 0..<contrubution2DArray[col].count {
-                
-                if contrubution2DArray[col][row].contributionDate.filterDate() && index < months.count {
-                    
-                    print("Col: \(col), Row: \(row)")
-                    print(contrubution2DArray[col][row].contributionDate)
-                    let contribution = Contribution(title: months[index],contributionDate: "",contributionColor:"")
-                    
-                    if row < 7 && (col < contrubution2DArray.count - 1) {
-                    
-                        let tmp = col+1
-                        date = contrubution2DArray[tmp][0].contributionDate
-                    }
-                    else if row == 0 {
-                        date = contrubution2DArray[col][0].contributionDate
-                    }
-                    
-                    print(date)
-                    if let i = self.contributions.firstIndex(where: { $0.contributionDate.contains(date) }) {
-                        print("Array Index: \(i)")
-                        contributions.insert(contribution, at: i)
-                    }
-
-                    
-                    index += 1
-                }
-            }
+    func getContributionCalendar() {
+        NetworkManager.shared.getContributionDate(for: username) { [weak self] contribution in
+            guard let self = self else { return }
+            //데이터 받으면 업데이트
+            self.contributions = contribution
+            self.months = NetworkManager.shared.months
+            self.configureDataSource()
             
         }
+ 
     }
+  
+    
 }
 
 extension GFContributionsVC {
 
-    func createLayout() -> UICollectionViewLayout {
-
-        let config = UICollectionViewCompositionalLayoutConfiguration()
-        
-        let layout = UICollectionViewCompositionalLayout(sectionProvider: {
+     func createLayout() -> UICollectionViewLayout {
+        let layout = UICollectionViewCompositionalLayout {
             (sectionIndex: Int, layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection? in
 
-            /// title
-            let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-                                                  heightDimension: .fractionalHeight(1.0))
-            let item = NSCollectionLayoutItem(layoutSize: itemSize)
-            item.contentInsets = NSDirectionalEdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2)
 
-            let groupHeight = NSCollectionLayoutDimension.absolute(50)
-            let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-                                                   heightDimension: groupHeight)
+            let verticalItem = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(0.5)))
             
-            let trailingItem = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(0.3)))
-            trailingItem.contentInsets = NSDirectionalEdgeInsets(top: 5.0, leading: 2.0, bottom: 5.0, trailing: 2.0)
-            let trailingGroup = NSCollectionLayoutGroup.vertical(layoutSize: NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(0.3), heightDimension: .fractionalHeight(1.0)),
-                                                                 subitem: trailingItem,
-                                                                 count: 7)
+            verticalItem.contentInsets = NSDirectionalEdgeInsets(top: 5.0, leading: 5.0, bottom: 5.0, trailing: 5.0)
+            let verticalGroup = NSCollectionLayoutGroup.vertical(layoutSize:
+                NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .fractionalHeight(1.0)), subitem: verticalItem, count: 7)
+            //1.2 * 0.3 =
+            let containerGroup = NSCollectionLayoutGroup.horizontal(
+                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+                                                   heightDimension: .fractionalHeight(0.25)),subitems: [verticalGroup])
+            
+            let section = NSCollectionLayoutSection(group: containerGroup)
+            section.orthogonalScrollingBehavior = .continuousGroupLeadingBoundary
 
-            let containerGroupFractionalWidth =  CGFloat(0.8)
-            var group: NSCollectionLayoutGroup!
-            
-            if sectionIndex == 0 {
-                group = NSCollectionLayoutGroup.horizontal(layoutSize:  groupSize, subitem: item, count: 1)
-            } else {
-            
-            group = NSCollectionLayoutGroup.horizontal(
-                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(containerGroupFractionalWidth),
-                                                  heightDimension: .fractionalHeight(0.5)),
-                subitems: [trailingGroup])
-                
-            }
-            
-            let section = NSCollectionLayoutSection(group: group)
-            section.orthogonalScrollingBehavior = .continuous
             return section
 
-        }, configuration: config)
+        }
         return layout
-    }
+     }
 }
 
 extension GFContributionsVC {
@@ -170,7 +105,7 @@ extension GFContributionsVC {
         collectionView.register(MonthTitleCell.self, forCellWithReuseIdentifier: MonthTitleCell.reuseIdentifier )
         collectionView.register(CommitCell.self, forCellWithReuseIdentifier: CommitCell.reuseIdentifier)
         view.addSubview(collectionView)
-        collectionView.delegate = self
+       // collectionView.delegate = self
     }
     func configureDataSource() {
         dataSource = UICollectionViewDiffableDataSource
@@ -178,24 +113,7 @@ extension GFContributionsVC {
                 (collectionView: UICollectionView, indexPath: IndexPath,
                 data: Contribution) -> UICollectionViewCell? in
 
-            // Get a cell of the desired kind.
-
-                
-            let section = indexPath.section
-                
-            if section == 0 {
-                
-                guard let cell = collectionView.dequeueReusableCell(
-                    withReuseIdentifier: MonthTitleCell.reuseIdentifier, for: indexPath) as? MonthTitleCell
-                    else { fatalError("Cannot create new cell") }
-                cell.lbMonth.text = self.monthTitle
-                
-                
-                return cell
-            }
-            else {
-                
-                
+            // Get a cell of the desired kind
                 guard let cell = collectionView.dequeueReusableCell(
                     withReuseIdentifier: CommitCell.reuseIdentifier, for: indexPath) as? CommitCell
                     else { fatalError("Cannot create new cell") }
@@ -207,32 +125,29 @@ extension GFContributionsVC {
                 cell.contentView.layer.cornerRadius = 8
                 
                 return cell
-            }
+        }
             // Return the cell.
     
-        }
+        
         
         
         // initial data
         var snapshot = NSDiffableDataSourceSnapshot<Int, Contribution>()
-   
-        let item = Contribution(title:"",contributionDate: "",contributionColor:"")
-    
-        let sections = Array(0..<2)
-        
-        for section in sections {
-            snapshot.appendSections([section])
-            section == 0 ? snapshot.appendItems([item]): snapshot.appendItems(contributions)
-        }
-        
+
+        snapshot.appendSections([0])
+        snapshot.appendItems(self.contributions)
+ 
         DispatchQueue.main.async {
             self.dataSource.apply(snapshot, animatingDifferences: false)
         }
     }
 }
 
-extension GFContributionsVC: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        collectionView.deselectItem(at: indexPath, animated: true)
-    }
-}
+//extension GFContributionsVC: UICollectionViewDelegate {
+//    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+//        collectionView.deselectItem(at: indexPath, animated: true)
+//    }
+//}
+//
+
+

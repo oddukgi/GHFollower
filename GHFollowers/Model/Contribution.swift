@@ -11,7 +11,7 @@ import Foundation
 
 struct Contribution: Hashable {
     
-    var title: String
+    var month: String
     var contributionDate: String
     var contributionColor: String
 }
