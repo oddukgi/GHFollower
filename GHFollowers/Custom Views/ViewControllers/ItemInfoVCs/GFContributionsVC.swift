@@ -10,27 +10,20 @@ import UIKit
 import SwiftSoup
 
 class GFContributionsVC: UIViewController {
-    
-    
-    private let baseURL = "https://github.com/users/"
-    static let headerElementKind = "header-element-kind"
-    typealias Item = (text: String, html: String)
-
-    /// - Tag: OrthogonalBehavior
-
+  
     var username      = ""
     var contributions = [Contribution]()
     var contrubution2DArray = [[Contribution]]()
     var months        = [String]()
     var monthTitle    = ""
-    // current document
+
     var document: Document = Document.init("")
-    // item founds
+
     var items: [String] = []
     var dataSource: UICollectionViewDiffableDataSource<Int, Contribution>! = nil
     var collectionView: UICollectionView! = nil
-
-    
+    var containerView: UIView!
+    var activityIndicator: UIActivityIndicatorView!
     
     init(username: String) {
         super.init(nibName: nil, bundle: nil)
@@ -41,33 +34,67 @@ class GFContributionsVC: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    
+  
     override func viewDidLoad() {
         super.viewDidLoad()
         configureHierarchy()
+        configureActivityIndicator()
         getContributionCalendar()
       
     }
+      
+    // MARK: - ActivityIndicator
+    func configureActivityIndicator() {
+        containerView = UIView(frame: view.bounds)
+        view.addSubview(containerView)
+        
+        containerView.backgroundColor = .systemBackground
+        containerView.alpha           = 0
+        
+        UIView.animate(withDuration: 0.25) { self.containerView.alpha = 0.8 }
+        
+        activityIndicator = UIActivityIndicatorView(style: .medium)
+        containerView.addSubview(activityIndicator)
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor, constant: -20)
+        ])
     
+    }
+
+    
+    func hideIndicatorView() {
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+         self.containerView.removeFromSuperview()
+         self.containerView = nil
+        }
+
+    }
     func trimmingTitle() {
         
         monthTitle = months.joined(separator: "\t\t\t\t")
     }
     
-    func getContributionCalendar() {
+    func getContributionCalendar() {    
+
+        self.activityIndicator.startAnimating()
+
         NetworkManager.shared.getContributionDate(for: username) { [weak self] contribution in
             guard let self = self else { return }
-            //데이터 받으면 업데이트
+   
+            DispatchQueue.main.async {
+                self.activityIndicator.stopAnimating()
+                self.hideIndicatorView()
+            }
+
             self.contributions = contribution
             self.months = NetworkManager.shared.months
             self.configureDataSource()
-            
         }
  
     }
-  
-    
 }
 
 extension GFContributionsVC {
@@ -76,21 +103,19 @@ extension GFContributionsVC {
         let layout = UICollectionViewCompositionalLayout {
             (sectionIndex: Int, layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection? in
 
-
             let verticalItem = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9), heightDimension: .fractionalHeight(0.9 / 7.0)))
             
             verticalItem.contentInsets = NSDirectionalEdgeInsets(top: 2.0, leading: 2.0, bottom: 2.0, trailing: 2.0)
             let verticalGroup = NSCollectionLayoutGroup.vertical(layoutSize:
-                NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9 / 7.0), heightDimension: .fractionalHeight(0.9)),
-                                                                                   subitem: verticalItem, count: 7)
+                NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9 / 7.0), heightDimension: .fractionalHeight(0.9)), subitem: verticalItem,count: 7)
             //  heightDimension = (verticalgroup width * 0.4) * 2
             let containerGroup = NSCollectionLayoutGroup.horizontal(
-                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.4),
-                                                   heightDimension: .fractionalHeight(1.05)),subitems: [verticalGroup])
+                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.38),
+                                                   heightDimension: .fractionalHeight(0.9)),subitems: [verticalGroup])
             
             let section = NSCollectionLayoutSection(group: containerGroup)
-            section.orthogonalScrollingBehavior = .continuousGroupLeadingBoundary
-
+            section.orthogonalScrollingBehavior = .continuous
+ 
             return section
 
         }
@@ -106,7 +131,6 @@ extension GFContributionsVC {
         collectionView.register(MonthTitleCell.self, forCellWithReuseIdentifier: MonthTitleCell.reuseIdentifier )
         collectionView.register(CommitCell.self, forCellWithReuseIdentifier: CommitCell.reuseIdentifier)
         view.addSubview(collectionView)
-       // collectionView.delegate = self
     }
     func configureDataSource() {
         dataSource = UICollectionViewDiffableDataSource
@@ -114,25 +138,15 @@ extension GFContributionsVC {
                 (collectionView: UICollectionView, indexPath: IndexPath,
                 data: Contribution) -> UICollectionViewCell? in
 
-            // Get a cell of the desired kind
                 guard let cell = collectionView.dequeueReusableCell(
                     withReuseIdentifier: CommitCell.reuseIdentifier, for: indexPath) as? CommitCell
                     else { fatalError("Cannot create new cell") }
-                
-            // Populate the cell with our item description.
+
                 cell.contentView.backgroundColor = UIColor(hexString: data.contributionColor)
-                cell.contentView.layer.borderColor = UIColor.black.cgColor
-                cell.contentView.layer.borderWidth = 1
-                cell.contentView.layer.cornerRadius = 8
                 
                 return cell
         }
-            // Return the cell.
-    
-        
-        
-        
-        // initial data
+  
         var snapshot = NSDiffableDataSourceSnapshot<Int, Contribution>()
 
         snapshot.appendSections([0])
@@ -143,12 +157,5 @@ extension GFContributionsVC {
         }
     }
 }
-
-//extension GFContributionsVC: UICollectionViewDelegate {
-//    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-//        collectionView.deselectItem(at: indexPath, animated: true)
-//    }
-//}
-//
 
 

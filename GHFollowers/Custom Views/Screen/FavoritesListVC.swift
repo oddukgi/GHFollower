@@ -12,8 +12,7 @@ class FavoritesListVC: GFDataLoadingVC {
 
     let tableView  = UITableView()
     var favorites: [Follower] = []
-    
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         configureViewController()
@@ -47,15 +46,14 @@ class FavoritesListVC: GFDataLoadingVC {
     func getFavorites() {
        PersistenceManager.retrieveFavorites { [weak self] result in
           
-            guard let self = self else { return }
+        guard let self = self else { return }
             switch result {
                 
             case .success(let favorites):
                 self.updateUI(with: favorites)
-           case .failure(let error):
+            case .failure(let error):
                 self.presentGFAlertOnMainThread(title: "Something went wrong", message: error.rawValue,
-                                            buttonTitle: "OK")
-           
+                                                buttonTitle: "OK")
             }
        }
     }

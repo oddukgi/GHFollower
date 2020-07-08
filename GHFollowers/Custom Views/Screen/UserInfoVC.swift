@@ -64,7 +64,7 @@ class UserInfoVC: GFDataLoadingVC {
         
         NSLayoutConstraint.activate([
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-            contentView.heightAnchor.constraint(equalToConstant: 600)
+            contentView.heightAnchor.constraint(equalToConstant: 640)
         ])
     }
     
@@ -95,8 +95,8 @@ class UserInfoVC: GFDataLoadingVC {
     }
     
     func layoutUI() {
-        let padding: CGFloat    = 20
-        let tableHeight:CGFloat = 155
+        let padding: CGFloat    = 17
+        let tableHeight:CGFloat = 135
         let itemHeight: CGFloat = 140
         
         itemViews = [headerView, itemViewContribution, itemViewOne, itemViewTwo, dateLabel]
@@ -116,11 +116,10 @@ class UserInfoVC: GFDataLoadingVC {
             headerView.heightAnchor.constraint(equalToConstant: 205),
                
             itemViewContribution.topAnchor.constraint(equalTo: headerView.bottomAnchor,constant: 10),
-            itemViewContribution.heightAnchor.constraint(equalToConstant: tableHeight),
+            itemViewContribution.heightAnchor.constraint(equalToConstant: itemHeight),
             
-            // width="722" height="112"
             itemViewOne.topAnchor.constraint(equalTo: itemViewContribution.bottomAnchor,constant: padding),
-            itemViewOne.heightAnchor.constraint(equalToConstant: itemHeight),
+            itemViewOne.heightAnchor.constraint(equalToConstant: tableHeight),
              
             itemViewTwo.topAnchor.constraint(equalTo: itemViewOne.bottomAnchor,constant: padding),
             itemViewTwo.heightAnchor.constraint(equalToConstant: itemHeight),
@@ -141,9 +140,6 @@ class UserInfoVC: GFDataLoadingVC {
     }
 
 }
-
-
-
 
 extension UserInfoVC: GFRepoItemVCDelegate {
     
