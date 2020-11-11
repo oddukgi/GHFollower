@@ -45,14 +45,14 @@ enum PersistenceManager {
     }
     
     static func retrieveFavorites(completed: @escaping(Result<[Follower],GFError>) -> Void) {
-        guard let favoriteData = defaults.object(forKey: Keys.favorites) as? Data else {
+        guard let faovoriteData = defaults.object(forKey: Keys.favorites) as? Data else {
             completed(.success([]))
             return
         }
         
         do {
             let decoder = JSONDecoder()
-            let favorites = try decoder.decode([Follower].self, from: favoriteData)
+            let favorites = try decoder.decode([Follower].self, from: faovoriteData)
             completed(.success(favorites))
         } catch {
             
@@ -60,6 +60,7 @@ enum PersistenceManager {
             completed(.failure(.unableToFavorite))
         }
     }
+    
     
     static func save(favorites: [Follower]) -> GFError? {
        

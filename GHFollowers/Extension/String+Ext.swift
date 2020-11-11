@@ -41,18 +41,6 @@ extension String {
 //        return dateFormatter.date(from: self)
 //    }
 //
-    
-    
-    func filterDate() -> Bool {
-        
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-01"
-        dateFormatter.locale     = Locale(identifier: "ko_KR")
-        dateFormatter.timeZone   = .current
-
-        return dateFormatter.date(from: self) != nil
-    }
-//
 //    func convertToDisplayFormat() -> String {
 //        
 //        // convert locale
@@ -61,11 +49,5 @@ extension String {
 //        return date.convertToMonthYearFormat()
 //
 //    }
-    
-    func encodeUrl() -> String {
-        return self.addingPercentEncoding( withAllowedCharacters: .urlQueryAllowed)!
-    }
-
-    
 
 }

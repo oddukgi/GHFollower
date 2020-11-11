@@ -47,7 +47,4 @@ class FollowerCell: UICollectionViewCell {
     
     
     
-    
-    
-    
 }

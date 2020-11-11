@@ -53,4 +53,3 @@ enum DeviceTypes {
         return isiPhoneX || isiPhoneXsMaxAndXr
     }
 }
-
