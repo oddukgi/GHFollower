@@ -12,6 +12,6 @@ Github ID를 검색하면 팔로워 정보를 보여주는 앱입니다.
 - 서치바에 키워드를 입력하면, 필터링 되어 결과를 보여줍니다.
 
 ##  스크린 샷
-<img src = "img/searchVC.jpeg" width = "225">  <img src = "img/FollowerlistVC.jpeg" width = "225">  <img src = "img/UserInfoVC.jpeg" width = "225">  <img src = "img/FavoritesListVC.jpeg" width = "225"> <img src = "img/empty id.jpeg" width= "225"> <img src = "img/settings.jpeg" width = "225"><img src = "img/wrong id.jpeg" width = "225">
+<img src = "img/searchVC.jpeg" width = "225">  <img src = "img/FollowerlistVC.jpeg" width = "225">  <img src = "img/UserInfoVC.jpeg" width = "225">  <img src = "img/FavoritesListVC.jpeg" width = "225"> <img src = "img/empty id.jpeg" width= "225"> <img src = "img/wrong id.jpeg" width = "225">
 
 
